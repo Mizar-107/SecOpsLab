@@ -1,0 +1,102 @@
+# Custom Falco Rules for SecOpsLab
+# Runtime detection rules for security monitoring
+customRules:
+  secopslab-rules.yaml: |-
+    # Rule: Detect shell spawned in container
+    - rule: Shell Spawned in Container
+      desc: Detect when a shell is started inside a container
+      condition: >
+        spawned_process and container and
+        proc.name in (bash, sh, zsh, csh, tcsh, ksh, fish)
+      output: >
+        Shell spawned in container 
+        (user=%user.name user_loginuid=%user.loginuid 
+         container=%container.name image=%container.image.repository 
+         shell=%proc.name parent=%proc.pname cmdline=%proc.cmdline)
+      priority: WARNING
+      tags: [shell, container]
+
+    # Rule: Detect network tools in production
+    - rule: Network Recon Tool Executed
+      desc: Detect network reconnaissance tools in containers
+      condition: >
+        spawned_process and container and
+        proc.name in (nmap, netcat, nc, ncat, wget, curl) and
+        not proc.pname in (entrypoint.sh, start.sh)
+      output: >
+        Network tool executed in container 
+        (user=%user.name container=%container.name 
+         tool=%proc.name cmdline=%proc.cmdline)
+      priority: WARNING
+      tags: [network, container]
+
+    # Rule: Detect crypto mining
+    - rule: Crypto Mining Detected
+      desc: Detect potential cryptocurrency mining activity
+      condition: >
+        spawned_process and container and
+        (proc.name in (xmrig, minerd, cpuminer, ethminer, cgminer) or
+         proc.cmdline contains "stratum+tcp" or
+         proc.cmdline contains "pool.minexmr" or
+         proc.cmdline contains "cryptonight")
+      output: >
+        Crypto mining detected 
+        (user=%user.name container=%container.name 
+         proc=%proc.name cmdline=%proc.cmdline)
+      priority: CRITICAL
+      tags: [cryptomining, container]
+
+    # Rule: Sensitive file access
+    - rule: Sensitive File Read
+      desc: Detect read access to sensitive files
+      condition: >
+        open_read and container and
+        fd.name in (/etc/shadow, /etc/passwd, /etc/sudoers, 
+                    /root/.ssh/authorized_keys, /root/.bash_history)
+      output: >
+        Sensitive file read 
+        (user=%user.name container=%container.name 
+         file=%fd.name command=%proc.cmdline)
+      priority: ERROR
+      tags: [filesystem, container]
+
+    # Rule: Package manager in production
+    - rule: Package Manager Executed
+      desc: Detect package manager usage in running containers
+      condition: >
+        spawned_process and container and
+        proc.name in (apt, apt-get, yum, dnf, apk, pip, pip3, npm, yarn)
+      output: >
+        Package manager executed in container 
+        (user=%user.name container=%container.name 
+         package_manager=%proc.name cmdline=%proc.cmdline)
+      priority: WARNING
+      tags: [package, container]
+
+    # Rule: Kubectl/cloud CLI in container
+    - rule: K8s or Cloud CLI in Container
+      desc: Detect kubernetes or cloud CLI usage inside container
+      condition: >
+        spawned_process and container and
+        proc.name in (kubectl, aws, gcloud, az, helm, oc)
+      output: >
+        Cloud/K8s CLI executed in container 
+        (user=%user.name container=%container.name 
+         cli=%proc.name cmdline=%proc.cmdline)
+      priority: ERROR
+      tags: [cloud, kubernetes, container]
+
+    # Rule: Container escape attempt
+    - rule: Container Escape Attempt
+      desc: Detect potential container escape attempts
+      condition: >
+        spawned_process and container and
+        (proc.cmdline contains "nsenter" or
+         proc.cmdline contains "/proc/1/root" or
+         proc.cmdline contains "docker.sock")
+      output: >
+        Potential container escape attempt 
+        (user=%user.name container=%container.name 
+         cmdline=%proc.cmdline)
+      priority: CRITICAL
+      tags: [escape, container]

@@ -1,0 +1,40 @@
+# Kyverno Policy: Restrict Image Registries
+# Only allows images from trusted registries
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: restrict-image-registries
+  annotations:
+    policies.kyverno.io/title: Restrict Image Registries
+    policies.kyverno.io/category: Supply Chain Security
+    policies.kyverno.io/severity: high
+    policies.kyverno.io/description: >-
+      Restricts container images to trusted registries only.
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: validate-registries
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      validate:
+        message: "Images must be from trusted registries: ghcr.io, gcr.io, or docker.io/library"
+        pattern:
+          spec:
+            containers:
+              - image: "ghcr.io/* | gcr.io/* | docker.io/library/* | registry.k8s.io/*"
+    - name: validate-init-registries
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      validate:
+        message: "Init container images must be from trusted registries."
+        pattern:
+          spec:
+            =(initContainers):
+              - image: "ghcr.io/* | gcr.io/* | docker.io/library/* | registry.k8s.io/*"

@@ -1,0 +1,45 @@
+# VULNERABLE Kubernetes Deployment - Database
+# This manifest has intentional security issues
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: database
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: database
+  template:
+    metadata:
+      labels:
+        app: database
+        # ❌ Missing env and team labels
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:13
+          # ❌ Default credentials
+          env:
+            - name: POSTGRES_USER
+              value: "admin"
+            - name: POSTGRES_PASSWORD
+              value: "password123"
+            - name: POSTGRES_DB
+              value: "microshop"
+          ports:
+            - containerPort: 5432
+          # ❌ No resource limits
+          # ❌ No probes
+          # ❌ Writable root filesystem
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: database
+spec:
+  selector:
+    app: database
+  ports:
+    - port: 5432
+      targetPort: 5432
+  type: ClusterIP

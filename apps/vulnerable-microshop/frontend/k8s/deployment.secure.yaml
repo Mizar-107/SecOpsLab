@@ -1,0 +1,84 @@
+# SECURE Kubernetes Deployment - Frontend
+# Demonstrates security best practices
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  labels:
+    app: frontend
+    env: demo
+    team: platform
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+        env: demo
+        team: platform
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: frontend
+          image: ghcr.io/yourorg/microshop-frontend:latest
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 101
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          ports:
+            - containerPort: 8080
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 3
+            periodSeconds: 5
+          volumeMounts:
+            - name: cache
+              mountPath: /var/cache/nginx
+            - name: run
+              mountPath: /var/run
+      volumes:
+        - name: cache
+          emptyDir: {}
+        - name: run
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+  labels:
+    app: frontend
+    env: demo
+    team: platform
+spec:
+  selector:
+    app: frontend
+  ports:
+    - port: 80
+      targetPort: 8080
+  type: ClusterIP

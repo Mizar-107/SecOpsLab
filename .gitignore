@@ -1,0 +1,28 @@
+# Ignore
+PROGRESS.md
+
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Secrets (even though demo)
+*.key
+*.pem
+!*.example.key
+
+# Local configs
+.envrc
+.env.local

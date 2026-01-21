@@ -1,0 +1,38 @@
+# VULNERABLE Kubernetes Deployment - Frontend
+# This manifest has intentional security issues
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  # ❌ Missing required labels
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+        # ❌ Missing env and team labels
+    spec:
+      containers:
+        - name: frontend
+          image: nginx:1.19
+          # ❌ Running as root (no securityContext)
+          # ❌ No resource limits
+          # ❌ No health probes
+          ports:
+            - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+spec:
+  selector:
+    app: frontend
+  ports:
+    - port: 80
+      targetPort: 80
+  type: ClusterIP

@@ -1,0 +1,37 @@
+# Falco Helm values for SecOpsLab
+# Lightweight configuration for local Kind cluster
+
+driver:
+  kind: modern_ebpf
+
+collectors:
+  docker:
+    enabled: false
+  containerd:
+    enabled: true
+    socket: /run/containerd/containerd.sock
+
+falcosidekick:
+  enabled: true
+  webui:
+    enabled: true
+    service:
+      type: NodePort
+      nodePort: 30282
+
+# Resource limits for local development
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+# Enable JSON output for easier parsing
+falco:
+  json_output: true
+  json_include_output_property: true
+  log_stderr: true
+  log_syslog: false
+  priority: debug

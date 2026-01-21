@@ -1,0 +1,52 @@
+# Kyverno Policy: Require Labels
+# Enforces mandatory labels for all pods
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: require-labels
+  annotations:
+    policies.kyverno.io/title: Require Labels
+    policies.kyverno.io/category: Best Practices
+    policies.kyverno.io/severity: medium
+    policies.kyverno.io/description: >-
+      Requires all pods to have app, env, and team labels for proper resource management.
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: require-app-label
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      validate:
+        message: "Label 'app' is required."
+        pattern:
+          metadata:
+            labels:
+              app: "?*"
+    - name: require-env-label
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      validate:
+        message: "Label 'env' is required (dev, staging, prod)."
+        pattern:
+          metadata:
+            labels:
+              env: "?*"
+    - name: require-team-label
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      validate:
+        message: "Label 'team' is required for ownership."
+        pattern:
+          metadata:
+            labels:
+              team: "?*"

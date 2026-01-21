@@ -1,0 +1,24 @@
+# Argo CD Application for MicroShop
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: microshop
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/YOUR_USERNAME/SecOpsLab.git
+    targetRevision: main
+    path: apps/vulnerable-microshop
+    directory:
+      recurse: true
+      include: 'k8s/*.secure.yaml'
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: microshop
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

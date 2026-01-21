@@ -1,0 +1,46 @@
+# VULNERABLE Kubernetes Deployment - API
+# This manifest has intentional security issues
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: api
+  template:
+    metadata:
+      labels:
+        app: api
+        # ❌ Missing env and team labels
+    spec:
+      containers:
+        - name: api
+          image: node:14
+          # ❌ Privileged container
+          securityContext:
+            privileged: true
+          # ❌ Hardcoded secrets in environment
+          env:
+            - name: DB_PASSWORD
+              value: "supersecret123"
+            - name: API_KEY
+              value: "sk-1234567890abcdef"
+          ports:
+            - containerPort: 3000
+          # ❌ No resource limits
+          # ❌ No health probes
+          command: ["node", "src/server.js"]
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: api
+spec:
+  selector:
+    app: api
+  ports:
+    - port: 3000
+      targetPort: 3000
+  type: ClusterIP

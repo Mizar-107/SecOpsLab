@@ -1,0 +1,84 @@
+# SECURE Kubernetes Deployment - API
+# Demonstrates security best practices
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api
+  labels:
+    app: api
+    env: demo
+    team: platform
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: api
+  template:
+    metadata:
+      labels:
+        app: api
+        env: demo
+        team: platform
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: api
+          image: ghcr.io/yourorg/microshop-api:latest
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1001
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          ports:
+            - containerPort: 3000
+          # ✅ Secrets from external source
+          envFrom:
+            - secretRef:
+                name: api-secrets
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: api
+  labels:
+    app: api
+    env: demo
+    team: platform
+spec:
+  selector:
+    app: api
+  ports:
+    - port: 3000
+      targetPort: 3000
+  type: ClusterIP

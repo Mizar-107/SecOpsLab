@@ -1,0 +1,42 @@
+# Kyverno Policy: Disallow Privileged Containers
+# Prevents containers from running in privileged mode
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: disallow-privileged-containers
+  annotations:
+    policies.kyverno.io/title: Disallow Privileged Containers
+    policies.kyverno.io/category: Pod Security
+    policies.kyverno.io/severity: high
+    policies.kyverno.io/description: >-
+      Privileged containers disable most security mechanisms and should be avoided.
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: deny-privileged-containers
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      validate:
+        message: "Privileged containers are not allowed. Remove securityContext.privileged or set to false."
+        pattern:
+          spec:
+            containers:
+              - =(securityContext):
+                  =(privileged): "false"
+    - name: deny-privileged-initcontainers
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      validate:
+        message: "Privileged init containers are not allowed."
+        pattern:
+          spec:
+            =(initContainers):
+              - =(securityContext):
+                  =(privileged): "false"

@@ -1,0 +1,32 @@
+# SECURE Dockerfile - Hardened version
+# Demonstrates security best practices
+
+FROM node:20-alpine
+# ✅ Current LTS, minimal Alpine base
+
+# ✅ Create non-root user
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nodejs -u 1001 -G nodejs
+
+WORKDIR /app
+
+# Copy package files with proper ownership
+COPY --chown=nodejs:nodejs package*.json ./
+
+# ✅ Production dependencies only
+RUN npm ci --only=production && npm cache clean --force
+
+# Copy source with proper ownership
+COPY --chown=nodejs:nodejs src/ ./src/
+
+# ✅ Switch to non-root user
+USER nodejs
+
+# ✅ No hardcoded secrets - use external secret management
+EXPOSE 3000
+
+# ✅ Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:3000/health || exit 1
+
+CMD ["node", "src/server.js"]

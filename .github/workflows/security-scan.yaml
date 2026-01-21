@@ -1,0 +1,92 @@
+# Security Scan Workflow
+# Runs on PRs to scan for vulnerabilities and misconfigurations
+name: Security Scan
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+env:
+  TRIVY_VERSION: "0.48.0"
+
+jobs:
+  trivy-scan:
+    name: Trivy Security Scan
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Trivy vulnerability scanner (filesystem)
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-fs-results.sarif'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Upload Trivy scan results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v2
+        if: always()
+        with:
+          sarif_file: 'trivy-fs-results.sarif'
+
+  dockerfile-scan:
+    name: Dockerfile Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Scan API Dockerfile
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'config'
+          scan-ref: 'apps/vulnerable-microshop/api'
+          format: 'table'
+          exit-code: '0'  # Don't fail - demo vulnerable files
+
+      - name: Scan Frontend Dockerfile
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'config'
+          scan-ref: 'apps/vulnerable-microshop/frontend'
+          format: 'table'
+          exit-code: '0'
+
+  k8s-manifest-scan:
+    name: Kubernetes Manifest Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Scan K8s manifests
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'config'
+          scan-ref: 'apps/vulnerable-microshop'
+          format: 'table'
+          exit-code: '0'
+          severity: 'CRITICAL,HIGH,MEDIUM'
+
+  secret-scan:
+    name: Secret Detection
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Detect secrets with Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scanners: 'secret'
+          format: 'table'
+          exit-code: '0'  # Don't fail - demo has intentional secrets
