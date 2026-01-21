@@ -1,0 +1,282 @@
+{
+    "annotations": {
+        "list": [
+            {
+                "builtIn": 1,
+                "datasource": "-- Grafana --",
+                "enable": true,
+                "hide": true,
+                "iconColor": "rgba(0, 211, 255, 1)",
+                "name": "Annotations & Alerts",
+                "type": "dashboard"
+            }
+        ]
+    },
+    "editable": true,
+    "fiscalYearStartMonth": 0,
+    "graphTooltip": 0,
+    "id": null,
+    "links": [],
+    "liveNow": false,
+    "panels": [
+        {
+            "gridPos": {
+                "h": 3,
+                "w": 24,
+                "x": 0,
+                "y": 0
+            },
+            "id": 1,
+            "options": {
+                "content": "# 🛡️ SecOpsLab Security Dashboard\nReal-time security posture monitoring for admission control and runtime security.",
+                "mode": "markdown"
+            },
+            "type": "text"
+        },
+        {
+            "gridPos": {
+                "h": 6,
+                "w": 6,
+                "x": 0,
+                "y": 3
+            },
+            "id": 2,
+            "options": {
+                "colorMode": "value",
+                "graphMode": "area",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "textMode": "auto"
+            },
+            "targets": [
+                {
+                    "expr": "count(kyverno_policy_rule_info_total{status=\"pass\"})",
+                    "legendFormat": "Passing",
+                    "refId": "A"
+                }
+            ],
+            "title": "✅ Policies Passing",
+            "type": "stat"
+        },
+        {
+            "gridPos": {
+                "h": 6,
+                "w": 6,
+                "x": 6,
+                "y": 3
+            },
+            "id": 3,
+            "options": {
+                "colorMode": "value",
+                "graphMode": "area",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "textMode": "auto"
+            },
+            "targets": [
+                {
+                    "expr": "count(kyverno_policy_rule_info_total{status=\"fail\"})",
+                    "legendFormat": "Failing",
+                    "refId": "A"
+                }
+            ],
+            "title": "❌ Policy Violations",
+            "type": "stat"
+        },
+        {
+            "gridPos": {
+                "h": 6,
+                "w": 6,
+                "x": 12,
+                "y": 3
+            },
+            "id": 4,
+            "options": {
+                "colorMode": "value",
+                "graphMode": "area",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "textMode": "auto"
+            },
+            "targets": [
+                {
+                    "expr": "sum(increase(falco_events_total{priority=\"Critical\"}[1h]))",
+                    "legendFormat": "Critical",
+                    "refId": "A"
+                }
+            ],
+            "title": "🚨 Critical Falco Alerts (1h)",
+            "type": "stat"
+        },
+        {
+            "gridPos": {
+                "h": 6,
+                "w": 6,
+                "x": 18,
+                "y": 3
+            },
+            "id": 5,
+            "options": {
+                "colorMode": "value",
+                "graphMode": "area",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "textMode": "auto"
+            },
+            "targets": [
+                {
+                    "expr": "sum(increase(falco_events_total[1h]))",
+                    "legendFormat": "Total",
+                    "refId": "A"
+                }
+            ],
+            "title": "📊 Total Falco Events (1h)",
+            "type": "stat"
+        },
+        {
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 0,
+                "y": 9
+            },
+            "id": 6,
+            "options": {
+                "legend": {
+                    "displayMode": "list",
+                    "placement": "bottom"
+                }
+            },
+            "targets": [
+                {
+                    "expr": "sum by (rule) (increase(falco_events_total[5m]))",
+                    "legendFormat": "{{rule}}",
+                    "refId": "A"
+                }
+            ],
+            "title": "Falco Events by Rule (5m rate)",
+            "type": "timeseries"
+        },
+        {
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 12,
+                "y": 9
+            },
+            "id": 7,
+            "options": {
+                "legend": {
+                    "displayMode": "list",
+                    "placement": "bottom"
+                }
+            },
+            "targets": [
+                {
+                    "expr": "sum by (priority) (falco_events_total)",
+                    "legendFormat": "{{priority}}",
+                    "refId": "A"
+                }
+            ],
+            "title": "Falco Events by Priority",
+            "type": "piechart"
+        },
+        {
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 0,
+                "y": 17
+            },
+            "id": 8,
+            "options": {
+                "legend": {
+                    "displayMode": "list",
+                    "placement": "bottom"
+                }
+            },
+            "targets": [
+                {
+                    "expr": "sum by (policy_name) (kyverno_policy_rule_info_total{status=\"fail\"})",
+                    "legendFormat": "{{policy_name}}",
+                    "refId": "A"
+                }
+            ],
+            "title": "Kyverno Policy Violations by Policy",
+            "type": "bargauge"
+        },
+        {
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 12,
+                "y": 17
+            },
+            "id": 9,
+            "options": {
+                "legend": {
+                    "displayMode": "list",
+                    "placement": "bottom"
+                }
+            },
+            "targets": [
+                {
+                    "expr": "kube_pod_container_status_running",
+                    "legendFormat": "{{namespace}}/{{pod}}",
+                    "refId": "A"
+                }
+            ],
+            "title": "Running Containers",
+            "type": "timeseries"
+        }
+    ],
+    "refresh": "10s",
+    "schemaVersion": 38,
+    "style": "dark",
+    "tags": [
+        "security",
+        "secopslab",
+        "falco",
+        "kyverno"
+    ],
+    "templating": {
+        "list": []
+    },
+    "time": {
+        "from": "now-1h",
+        "to": "now"
+    },
+    "timepicker": {},
+    "timezone": "",
+    "title": "SecOpsLab Security Overview",
+    "uid": "secopslab-security",
+    "version": 1
+}

@@ -1,0 +1,62 @@
+# Kyverno Policy: Verify Image Signatures
+# Validates that container images are signed with Cosign
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: verify-image-signatures
+  annotations:
+    policies.kyverno.io/title: Verify Image Signatures
+    policies.kyverno.io/category: Supply Chain Security
+    policies.kyverno.io/severity: high
+    policies.kyverno.io/description: >-
+      Verifies that container images from ghcr.io are signed using Cosign
+      keyless signing with GitHub Actions OIDC.
+spec:
+  validationFailureAction: Audit  # Set to Enforce in production
+  background: false
+  webhookTimeoutSeconds: 30
+  rules:
+    - name: verify-ghcr-signatures
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      verifyImages:
+        - imageReferences:
+            - "ghcr.io/*"
+          attestors:
+            - entries:
+                - keyless:
+                    subject: "*"
+                    issuer: "https://token.actions.githubusercontent.com"
+                    rekor:
+                      url: https://rekor.sigstore.dev
+          mutateDigest: true
+          verifyDigest: true
+---
+# Alternative: Key-based verification (for private keys)
+# Uncomment and configure if using a specific Cosign key pair
+# apiVersion: kyverno.io/v1
+# kind: ClusterPolicy
+# metadata:
+#   name: verify-image-signatures-key
+# spec:
+#   validationFailureAction: Audit
+#   rules:
+#     - name: verify-with-key
+#       match:
+#         any:
+#           - resources:
+#               kinds:
+#                 - Pod
+#       verifyImages:
+#         - imageReferences:
+#             - "ghcr.io/yourorg/*"
+#           attestors:
+#             - entries:
+#                 - keys:
+#                     publicKeys: |-
+#                       -----BEGIN PUBLIC KEY-----
+#                       YOUR_COSIGN_PUBLIC_KEY_HERE
+#                       -----END PUBLIC KEY-----

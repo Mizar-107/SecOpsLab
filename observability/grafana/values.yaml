@@ -1,0 +1,52 @@
+# Grafana Helm Values for SecOpsLab
+# Configured for security observability
+
+# Access settings for demo
+adminUser: admin
+adminPassword: secopslab
+
+service:
+  type: NodePort
+  nodePort: 30300
+
+# Prometheus datasource (auto-configured)
+datasources:
+  datasources.yaml:
+    apiVersion: 1
+    datasources:
+      - name: Prometheus
+        type: prometheus
+        url: http://prometheus-kube-prometheus-prometheus.monitoring:9090
+        access: proxy
+        isDefault: true
+
+# Dashboard providers - load from configmap
+dashboardProviders:
+  dashboardproviders.yaml:
+    apiVersion: 1
+    providers:
+      - name: 'secopslab'
+        orgId: 1
+        folder: 'SecOpsLab'
+        type: file
+        disableDeletion: false
+        editable: true
+        options:
+          path: /var/lib/grafana/dashboards/secopslab
+
+# Load dashboards from configmap
+dashboardsConfigMaps:
+  secopslab: grafana-dashboards
+
+# Resource limits for local development
+resources:
+  requests:
+    cpu: 50m
+    memory: 128Mi
+  limits:
+    cpu: 200m
+    memory: 256Mi
+
+# Persistence disabled for demo
+persistence:
+  enabled: false

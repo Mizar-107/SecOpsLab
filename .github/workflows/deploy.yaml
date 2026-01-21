@@ -1,0 +1,78 @@
+# GitOps Deployment Workflow
+# Triggers Argo CD sync after successful image build
+name: Deploy
+
+on:
+  workflow_run:
+    workflows: ["Build and Sign"]
+    types:
+      - completed
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: true
+        default: 'demo'
+        type: choice
+        options:
+          - demo
+          - staging
+          - production
+
+env:
+  ARGOCD_SERVER: localhost:30080
+
+jobs:
+  trigger-sync:
+    name: Trigger Argo CD Sync
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Argo CD CLI
+        run: |
+          curl -sSL -o argocd https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
+          chmod +x argocd
+          sudo mv argocd /usr/local/bin/
+
+      # For local Kind cluster, this would be run manually
+      # In production, you'd have a reachable Argo CD server
+      - name: Sync Argo CD Application
+        if: ${{ vars.ARGOCD_ENABLED == 'true' }}
+        env:
+          ARGOCD_AUTH_TOKEN: ${{ secrets.ARGOCD_AUTH_TOKEN }}
+        run: |
+          argocd app sync microshop \
+            --server ${{ env.ARGOCD_SERVER }} \
+            --auth-token $ARGOCD_AUTH_TOKEN \
+            --insecure \
+            --async
+
+      # Alternative: Update a deployment manifest to trigger GitOps
+      - name: Update deployment timestamp
+        run: |
+          echo "Deployment triggered at $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          echo "Environment: ${{ inputs.environment || 'demo' }}"
+          echo ""
+          echo "In a GitOps workflow, this would:"
+          echo "1. Update an image tag in the manifests"
+          echo "2. Commit the change"
+          echo "3. Argo CD detects the change and syncs"
+
+      - name: Create deployment summary
+        run: |
+          echo "## 🚀 Deployment Triggered" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Property | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Environment | ${{ inputs.environment || 'demo' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Timestamp | $(date -u +%Y-%m-%dT%H:%M:%SZ) |" >> $GITHUB_STEP_SUMMARY
+          echo "| Triggered by | ${{ github.actor }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Next Steps" >> $GITHUB_STEP_SUMMARY
+          echo "- Argo CD will sync the application" >> $GITHUB_STEP_SUMMARY
+          echo "- Kyverno policies will validate the deployment" >> $GITHUB_STEP_SUMMARY
+          echo "- Falco will monitor runtime behavior" >> $GITHUB_STEP_SUMMARY

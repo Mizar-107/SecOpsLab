@@ -1,0 +1,56 @@
+# Prometheus Helm Values for SecOpsLab
+# Lightweight configuration for local Kind cluster
+
+# Keep the stack minimal for demo purposes
+prometheus:
+  prometheusSpec:
+    # Accept ServiceMonitors from all namespaces
+    serviceMonitorSelectorNilUsesHelmValues: false
+    podMonitorSelectorNilUsesHelmValues: false
+    
+    # Minimal retention for demo
+    retention: 24h
+    retentionSize: "1GB"
+    
+    # Resource limits for local development
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+
+    # Scrape configs for Falco
+    additionalScrapeConfigs:
+      - job_name: 'falco'
+        static_configs:
+          - targets: ['falco-falcosidekick.falco.svc:2801']
+
+# Disable components not needed for demo
+alertmanager:
+  enabled: false
+
+nodeExporter:
+  enabled: true
+  resources:
+    requests:
+      cpu: 50m
+      memory: 32Mi
+    limits:
+      cpu: 100m
+      memory: 64Mi
+
+kubeStateMetrics:
+  enabled: true
+  resources:
+    requests:
+      cpu: 50m
+      memory: 32Mi
+    limits:
+      cpu: 100m
+      memory: 128Mi
+
+# Grafana is managed separately by the kube-prometheus-stack
+grafana:
+  enabled: false
